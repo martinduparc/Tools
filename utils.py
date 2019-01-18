@@ -16,7 +16,7 @@ from docx import Document
 
 def configure_dual_logging(verbosity, log = None, file = None):
     '''
-    Configures logging with verbosity and log to file options. Default is looging to console only.
+    Configures logging with verbosity and log to file options. Default is logging to console only.
     Inputs:
     verbosity (string) - set the verbosity of the logging (v = errors and warnings, vv = errors, warnings, info,
         vvv = errors, warnings, info, and debug)
@@ -29,9 +29,6 @@ def configure_dual_logging(verbosity, log = None, file = None):
     # Setting the format of the logs
     FORMAT = "[%(asctime)s] %(levelname)s: %(message)s"
 
-    # Configuring the logging system to the lowest level
-    # logging.basicConfig(level=logging.DEBUG, format=FORMAT, stream=sys.stderr)
-    #
     # Defining the ANSI Escape characters
     BOLD = '\033[1m'
     DEBUG = '\033[92m'
@@ -39,7 +36,7 @@ def configure_dual_logging(verbosity, log = None, file = None):
     WARNING = '\033[93m'
     ERROR = '\033[91m'
     END = '\033[0m'
-    #
+
     # Coloring the log levels
     if sys.stderr.isatty():
         logging.addLevelName(logging.ERROR, "%s%s%s%s%s" % (BOLD, ERROR, "LM_ImageProc_ERROR", END, END))
@@ -51,26 +48,13 @@ def configure_dual_logging(verbosity, log = None, file = None):
         logging.addLevelName(logging.WARNING, "LM_ImageProc_WARNING")
         logging.addLevelName(logging.INFO, "LM_ImageProc_INFO")
         logging.addLevelName(logging.DEBUG, "LM_ImageProc_DEBUG")
-    #
+
     # Setting the level of the logs
     level = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG][verbosity]
-    #
-    # logger = logging.getLogger()
-    # logger.setLevel(level)
-    # logging.getLogger()
-    # logging.getLogger().setLevel(level)
-    # logging.setLevel(level)
 
-    # level = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG][verbosity]
-    # logging.getLogger().setLevel(level)
+
     logging.basicConfig(level=level, format=FORMAT, stream=sys.stderr)
 
-    # logging.getLogger()
-    # logger = logging.getLogger()
-    # logger.setLevel(level)
-    # start with a new log file if log == new
-    # logger = logging.getLogger('logger')
-    # logger.setLevel(level)
 
     if log == 'new':
         open(file, 'w').close()
@@ -79,19 +63,14 @@ def configure_dual_logging(verbosity, log = None, file = None):
     if log is not None:
         fh = logging.FileHandler(file)
         fh.setLevel(level)
-        # fh.setLevel(logging.INFO)
-        # logger.addHandler(fh)
-        logging.getLogger().addHandler(fh)
-        # logger.addHandler(fh)
 
-    # return logger
+        logging.getLogger().addHandler(fh)
 
 def configure_logging(verbosity):
     # Setting the format of the logs
     FORMAT = "[%(asctime)s] %(levelname)s: %(message)s"
 
     # Configuring the logging system to the lowest level
-
     logging.basicConfig(level=logging.DEBUG, format=FORMAT, stream=sys.stderr)
 
 
@@ -154,7 +133,7 @@ def run_shell_cmd(cmd, exit = True, silent = False): # Use subprocess.run for Py
 
     except subprocess.CalledProcessError as e:
         if silent == False:
-            logging.error("Process error running '{0}':\n{1}".format(cmd, e))
+            logging.error("run_shell_cmd: Process error running '{0}':\n{1}".format(cmd, e))
         if exit is True:
             exit(0)
         else:
@@ -163,7 +142,7 @@ def run_shell_cmd(cmd, exit = True, silent = False): # Use subprocess.run for Py
     # Check to see if there was an error by checking the length of stderr stream
     if len(res.stderr) != 0:
         if silent == False:
-            logging.error("Error running '{0}':\n{1}".format(cmd, str(res.stderr)))
+            logging.error("run_shell_cmd: Error running '{0}':\n{1}".format(cmd, str(res.stderr)))
         if exit is True:
             exit(0)
         else:
@@ -192,7 +171,7 @@ def get_dir_size(dir_path):
         return total_size
 
     except FileNotFoundError as e:
-        logging.error('{0} not found. Error {1}'.format(start_path, e))
+        logging.error('Error in get_dir_size: {0} not found. Error {1}'.format(start_path, e))
         exit (0)
         # return 0
 
@@ -214,7 +193,7 @@ def get_s3_dir_size(bucket, prefix, client):
     elif objects['KeyCount'] == 0:
         return 0
 
-def columns_to_dict(file, key_columns, value_columns, subs = {}, required_term = None, column_type = 'index'):
+def columns_to_dict(file, key_columns, value_columns, subs = {}, required_term = None, column_type = 'index', case = 'lower'):
     '''
     Takes a tab delimited file and returns a dictionary. The keys are the values in the columns
     listed in the key_columns list separated by pipes. The values are the values in the columns
@@ -246,12 +225,16 @@ def columns_to_dict(file, key_columns, value_columns, subs = {}, required_term =
 
 
         for line in f:
+            if case == 'lower' and required_term is not None:
+                line = line.lower()
+                required_term = required_term.lower()
+            if case == 'upper' and required_term is not None:
+                line = line.lower()
+                required_term = required_term.upper()
 
-            line = line.lower()
             for sub in subs:
                 line = re.sub(sub, subs[sub], line)
-            # print (required_term.lower(), line)
-            if required_term is not None and required_term.lower() not in line:
+            if required_term is not None and required_term not in line:
                 continue
             line = line.strip().split("\t")
 
@@ -261,17 +244,17 @@ def columns_to_dict(file, key_columns, value_columns, subs = {}, required_term =
             for col in key_columns:
                 try:
                     key_list += [line[col]]
-                except IndexError:
-                    logging.error('List index out of range for value column')
-                    logging.error('index is {0}, Line is: {1}'.format(col, line))
+                except IndexError as e:
+                    logging.error('Error in columns_to_dict: List index out of range for value column. Error {0}'.format(e))
+                    logging.error('Error in columns_to_dict: index is {0}, Line is: {1}'.format(col, line))
             key_string = '|'.join(key_list)
 
             for col in value_columns:
                 try:
                     value_list += [line[col]]
                 except IndexError as e:
-                    logging.error('List index out of range for value column. Error: {0}'.format(e))
-                    logging.error('index is {0}, Line is: {1}'.format(col, line))
+                    logging.error('Error in columns_to_dict: List index out of range for value column. Error {0}'.format(e))
+                    logging.error('Error in columns_to_dict: index is {0}, Line is: {1}'.format(col, line))
             value_string = '|'.join(value_list)
 
 
@@ -322,56 +305,48 @@ def getColValue(file, search_term, column):
             file (string) - tab delimited file to be searched
             column (int) - index of the column to be returned
         Output:
-            Value at the specified locaiton in the file
+            Value at the specified location in the file
         '''
     val = ""
-    with open(file, 'w+') as f:
+    with open(file, 'r') as f:
         for line in f:
             if search_term in line:
                 line = line.strip().split("\t")
                 try:
                     val = line[column]
                 except Exception as e:
-                    logging.error(e)
+                    logging.error('Error in getColValue for {0}: {1}'.format(file, e))
     f.close()
     return val
 
-def getColValues(file, search_terms, output_columns):
+def getColValues(file, search_terms, output_columns, match = all):
     '''
-        Searches a file for a row matching the search_terms and returns the value of specified columns
-        in that row
+        Searches a file for a row with columns matching the search_terms and returns the value of specified columns
+        in that row.
         Input:
-            term (string) - term being searched for
+            search_terms (list) - terms being searched for
             file (string) - tab delimited file to be searched
-            column (int) - index of the column to be returned
+            output_columns (list) - names of the columns to be returned
+            match (all or any) - parameter indicating whether all or any of the search terms have to match
+                for the row to match
         Output:
-            Value at the specified locaiton in the file
+            Values at the specified location in the file
         '''
     vals = []
     with open(file) as f:
         first_line = f.readline()
-        column_names = first_line.split('\t')
-        # print (column_names, file, search_terms, output_columns)
+        column_names = first_line.strip().split('\t')
         for line in f:
-            # print (search_terms, line)
-            if all(search_term in line for search_term in search_terms):
+            if match(search_term.lower() in line.lower().strip().split('\t') for search_term in search_terms):
                 line = line.strip().split("\t")
-                # print (line)
                 for col in output_columns:
                     try:
                         val = line[column_names.index(col)]
-                        vals += [val]
-                    # val = line[column]
+                        if val not in vals:
+                            vals += [val]
                     except Exception as e:
-                        logging.error(e)
+                        logging.error('Error in getColValues for {0}: {1}'.format(file, e))
 
-            # for search_term in search_terms:
-            #     if search_term in line:
-            #         line = line.strip().split("\t")
-            #         try:
-            #             val = line[column]
-            #         except Exception as e:
-            #             logging.error(e)
     f.close()
     return vals
 
@@ -382,20 +357,16 @@ def getFromFile(file, term, regex_template):
     Input: term (string)
     Output: Lungmap ID and term - separated by a semicolon (string)
     '''
-    # term = re.sub('^\s', '', term)
-    # regex = r'\;(LM[HM]A[\d]{10})\"\>[^\!]*\<(?:rdfs\:label|breath\_database\:synonym|breath\_database\:HTC\_Code)\>' \
-    #         + term + '\<'
+
     regex = regex_template.substitute({'term': term})
     f = open(file, 'r')
     s = f.read()
     match = re.findall(regex, s, re.MULTILINE)
-    # logging.info(regex)
     if match != []:
         logging.debug('matched: ' + term)
         return match[0] + ";" + term
     f.close()
-    # logging.info(term, ' is not in {0}'.format(cfg['ontologyFile']))
-    logging.debug(term + ' is not in {0}'.format(file))
+    logging.debug('getFromFile: {0} is not in {1}'.format(term, file))
     return term
 
 def para2text(doc):
