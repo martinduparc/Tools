@@ -351,23 +351,31 @@ def getColValues(file, search_terms, output_columns, match = all):
     return vals
 
 
-def getFromFile(file, term, regex_template):
+def getFromFile(file, search_term, regex_template, include_term = True):
     '''
-    Searches for the input term in the ontology file and returns the corresponding LungMap ID.
+    Searches for the input term in the file and returns the corresponding regex match.
     Input: term (string)
     Output: Lungmap ID and term - separated by a semicolon (string)
     '''
 
-    regex = regex_template.substitute({'term': term})
+    search_term_regex = re.sub(' ', '\s', search_term)
+    search_term_regex = re.sub(',', '\,', search_term_regex)
+    regex = regex_template.substitute({'search_term': search_term_regex})
     f = open(file, 'r')
     s = f.read()
+
     match = re.findall(regex, s, re.MULTILINE)
     if match != []:
-        logging.debug('matched: ' + term)
-        return match[0] + ";" + term
+        logging.debug('matched: ' + search_term)
+        if include_term is True:
+
+            return match[0] + ";" + search_term
+        else:
+            return match[0]
     f.close()
-    logging.debug('getFromFile: {0} is not in {1}'.format(term, file))
-    return term
+    logging.debug('getFromFile: {0} is not in {1}'.format(search_term, file))
+    return search_term
+
 
 def para2text(doc):
     '''
@@ -391,10 +399,11 @@ def my_grep (regex, document, group):
     Output
     result: result of re.findall search using the regex statement (string)
     '''
+    print (document)
     try:
         result = re.findall(regex, document)[0][group]
     except:
         result = ""
-
+    print (result)
     result = re.sub('^\s*|\s*$','', result)  # remove any spaces at the beginning or end of the result string
     return result
