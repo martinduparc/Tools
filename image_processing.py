@@ -176,8 +176,8 @@ configure_dual_logging(args.verbosity_level, log = args.log, file = cfg['logFile
 
 client = boto3.client(
     's3',
-    aws_access_key_id='AKIAID6OPOO53YJ6UQWA',
-    aws_secret_access_key='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',
+    aws_access_key_id='',
+    aws_secret_access_key='',
 )
 
 ontology_regex_template = Template(r'\;(LM[HM]A[\d]{10})\"\>[^\!]*\<(?:rdfs\:label|breath\_database\:synonym|'
