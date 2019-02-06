@@ -108,48 +108,50 @@ def run_shell_cmd(cmd, exit = True, silent = False): # Use subprocess.run for Py
         Result of the shell command (string)
     '''
 
-    # # proc = subprocess.Popen(cmd,
-    # #                        stdout=subprocess.PIPE,
-    # #                        stderr=subprocess.PIPE,
-    # #                        encoding='UTF-8',
-    # #                        shell=True)
-    #
     # proc = subprocess.Popen(cmd,
-    #                         stdout=subprocess.PIPE,
-    #                         stderr=subprocess.PIPE,
-    #                         shell=True)
-    #
-    # out, err = proc.communicate()
-    #
-    # # Check to see if there was an error by checking the length of stderr stream
-    # if len(err) != 0:
-    #     # Print an error message consisting of the command that was run and resulting error
-    #     logging.error("Error running '{0}':\n{1}".format(cmd, str(err)))
-    #     exit(0)
-    # return str(out)
-    # res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, shell=True, encoding='UTF-8')
-    try:
-        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, shell=True, encoding='UTF-8')
+    #                        stdout=subprocess.PIPE,
+    #                        stderr=subprocess.PIPE,
+    #                        encoding='UTF-8',
+    #                        shell=True)
 
-    except subprocess.CalledProcessError as e:
-        if silent == False:
-            logging.error("run_shell_cmd: Process error running '{0}':\n{1}".format(cmd, e))
-        if exit is True:
-            exit(0)
-        else:
-            return -1
+    proc = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True)
+
+    out, err = proc.communicate()
 
     # Check to see if there was an error by checking the length of stderr stream
-    if len(res.stderr) != 0:
-        if silent == False:
-            logging.error("run_shell_cmd: Error running '{0}':\n{1}".format(cmd, str(res.stderr)))
+    if len(err) != 0:
+        # Print an error message consisting of the command that was run and resulting error
+        logging.error("Error running '{0}':\n{1}".format(cmd, str(err)))
         if exit is True:
             exit(0)
         else:
             return -1
-    output = re.sub('\n|^\s*', '', res.stdout)  # remove new line characters and spaces at the beginning of the output
-
-    return str(output)
+    return str(out)
+    # try:
+    #     res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, shell=True, encoding='UTF-8')
+    #
+    # except subprocess.CalledProcessError as e:
+    #     if silent == False:
+    #         logging.error("run_shell_cmd: Process error running '{0}':\n{1}".format(cmd, e))
+    #     if exit is True:
+    #         exit(0)
+    #     else:
+    #         return -1
+    #
+    # # Check to see if there was an error by checking the length of stderr stream
+    # if len(res.stderr) != 0:
+    #     if silent == False:
+    #         logging.error("run_shell_cmd: Error running '{0}':\n{1}".format(cmd, str(res.stderr)))
+    #     if exit is True:
+    #         exit(0)
+    #     else:
+    #         return -1
+    # output = re.sub('\n|^\s*', '', res.stdout)  # remove new line characters and spaces at the beginning of the output
+    #
+    # return str(output)
 
 
 def get_dir_size(dir_path):
